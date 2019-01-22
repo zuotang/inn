@@ -3,13 +3,24 @@ const request = require("request");
 const fs = require("fs");
 const path = require("path");
 const cheerio = require("cheerio");
-const config = require('./config.js');
+const config = require("./lianjia.js");
 
+// 动态加载config文件
+// function getConfig(filePath) {
+//   let Module = module.constructor;
+//   const code = fs.readFileSync(filePath, "utf8");
+//   let m = new Module();
+//   m._compile(code, "first.js");
+//   let a = m.exports;
+//   return a;
+// }
 (async () => {
-  let store = {tree:[config.entry],record:[]};
+  let store = { tree: [config.entry], record: [] };
   //如果存在记录则继续上次爬取
   if (fs.existsSync(config.store)) {
-    console.log('发现爬取记录，如果不需要接着上次记录下载。请手动删除store.json文件')
+    console.log(
+      "发现爬取记录，如果不需要接着上次记录下载。请手动删除store.json文件"
+    );
     store = fs.readFileSync(config.store, "utf8");
     store = JSON.parse(store);
   }
@@ -18,15 +29,15 @@ const config = require('./config.js');
 
 async function walk(store) {
   let current = store.tree.pop();
-  console.log(`还有[${store.tree.length}]页`)
+  console.log(`还有[${store.tree.length}]页`);
   //判断是否是下载内容
   if (current.type == "download") {
     //下载文件处理
     let fileNameRegex = /[\\\/\*\"\|\?\<\>\:]/g;
     current.fileName = current.fileName.replace(fileNameRegex, "");
     mkdirsSync(current.save);
-    let filePath=path.resolve(__dirname,current.save,current.fileName);
-    console.log(`下载视频[${filePath}]`);
+    let filePath = path.resolve(__dirname, current.save, current.fileName);
+    console.log(`下载[${filePath}]`);
     await new Promise((resolve, reject) => {
       request
         .get(current.url)
@@ -35,7 +46,7 @@ async function walk(store) {
         .pipe(fs.createWriteStream(filePath));
     });
   } else {
-    console.log(`正在解析页面${current.url}`)
+    console.log(`正在解析页面${current.url}`);
     //获取网页内容
     let body = await rp.get({ uri: current.url, ...config.options });
     const $ = cheerio.load(body);
@@ -61,7 +72,7 @@ async function walk(store) {
     saveState(store);
     return walk(store);
   } else {
-    console.log('全部下载完成')
+    console.log("全部下载完成");
   }
 }
 
