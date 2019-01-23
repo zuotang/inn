@@ -3,8 +3,9 @@ const request = require("request");
 const fs = require("fs");
 const path = require("path");
 const cheerio = require("cheerio");
-const config = require("./lianjia.js");
+const config = require("./config/tuwan.js");
 
+const storeFile = path.resolve(__dirname, "./store/", `${config.name}.json`);
 // 动态加载config文件
 // function getConfig(filePath) {
 //   let Module = module.constructor;
@@ -14,14 +15,24 @@ const config = require("./lianjia.js");
 //   let a = m.exports;
 //   return a;
 // }
+
+/*
+Store
+  Context
+    *url
+    *title
+    type download|json|string|html(default)
+
+*/
+
 (async () => {
   let store = { tree: [config.entry], record: [] };
   //如果存在记录则继续上次爬取
-  if (fs.existsSync(config.store)) {
+  if (fs.existsSync(storeFile)) {
     console.log(
-      "发现爬取记录，如果不需要接着上次记录下载。请手动删除store.json文件"
+      `发现爬取记录，如果不需要接着上次记录下载。请手动删除[${storeFile}]文件`
     );
-    store = fs.readFileSync(config.store, "utf8");
+    store = fs.readFileSync(storeFile, "utf8");
     store = JSON.parse(store);
   }
   walk(store);
@@ -35,26 +46,38 @@ async function walk(store) {
     //下载文件处理
     let fileNameRegex = /[\\\/\*\"\|\?\<\>\:]/g;
     current.fileName = current.fileName.replace(fileNameRegex, "");
-    mkdirsSync(current.save);
-    let filePath = path.resolve(__dirname, current.save, current.fileName);
-    console.log(`下载[${filePath}]`);
-    await new Promise((resolve, reject) => {
-      request
-        .get(current.url)
-        .on("end", resolve)
-        .on("error", reject)
-        .pipe(fs.createWriteStream(filePath));
-    });
+    let saveDir = path.resolve(__dirname, "./download/", current.save);
+    mkdirsSync(saveDir);
+    let filePath = path.resolve(saveDir, current.fileName);
+    //下载标记文件
+    let loadFilePath = filePath + ".load";
+    //文件是否需要下载
+    if (!fs.existsSync(filePath) || fs.existsSync(loadFilePath)) {
+      fs.writeFileSync(loadFilePath, "", "utf8");
+      console.log(`下载[${filePath}]`);
+      await new Promise((resolve, reject) => {
+        request
+          .get(current.url)
+          .on("end", () => {
+            //删除下载标记文件
+            fs.unlinkSync(loadFilePath);
+            resolve();
+          })
+          .on("error", reject)
+          .pipe(fs.createWriteStream(filePath));
+      });
+    }
   } else {
     console.log(`正在解析页面${current.url}`);
     //获取网页内容
     let body = await rp.get({ uri: current.url, ...config.options });
-    const $ = cheerio.load(body);
+    //格式化数据
+    let $ = formatDataByType(current.type, body);
     //使用规则匹配
     for (let { test, handle } of config.rule) {
       if (test.test(current.url)) {
         //解析按规则内容
-        let children = await handle.call(config, { body, $, ...current });
+        let children = await handle.call(current, $, body);
         //如果处理返回的是列表
         if (Array.isArray(children)) {
           children.map(item => {
@@ -76,6 +99,19 @@ async function walk(store) {
   }
 }
 
+// 通过类型格式化数据
+function formatDataByType(type, body) {
+  switch (type) {
+    case "json":
+      return JSON.parse(body);
+    case "string":
+      return body;
+    case "html":
+    default:
+      return cheerio.load(body);
+  }
+}
+
 function addChildren(store, item, parent) {
   // 添加链
   item.parent = parent;
@@ -88,7 +124,8 @@ function addChildren(store, item, parent) {
 
 //保存状态
 function saveState(store) {
-  fs.writeFileSync(config.store, JSON.stringify(store), "utf8");
+  mkdirsSync(path.resolve(__dirname, "./store"));
+  fs.writeFileSync(storeFile, JSON.stringify(store), "utf8");
 }
 
 // 递归创建目录 同步方法

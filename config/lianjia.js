@@ -12,12 +12,13 @@ const urlToFileName = url => {
   return fileName;
 };
 
+var index = 1;
 const config = {
   entry: {
     url: "https://gz.lianjia.com/ershoufang/rs/",
     title: "list"
   },
-  store: path.resolve(__dirname, "store.json"),
+  name: "lianjia",
   options: {
     headers: {
       Host: "gz.lianjia.com",
@@ -35,8 +36,10 @@ const config = {
   rule: [
     {
       test: /ershoufang\/.*?\/$/,
-      handle: ({ $, url, body, title, parent }) => {
+      handle: function($, body) {
+        index++;
         let list = [];
+        list.push({ url: `https://gz.lianjia.com/ershoufang/pg${index}/` });
         $(".sellListContent>li").each(function(i, item) {
           let title = $(this)
             .find(".title>a")
@@ -55,8 +58,8 @@ const config = {
     },
     {
       test: /ershoufang\/.*?\.html$/,
-      handle: ({ url, title, $, body, parent }) => {
-        console.log(title, "详情页");
+      handle: function($, body) {
+        console.log(this.title, "详情页");
       }
     }
   ]

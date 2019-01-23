@@ -17,7 +17,7 @@ const config = {
     url: "https://amlyu.com/page/1",
     title: "首页"
   },
-  store: path.resolve(__dirname, "store.json"),
+  name: "amlyu",
   options: {
     headers: {
       Host: "amlyu.com",
@@ -31,7 +31,7 @@ const config = {
   rule: [
     {
       test: /page\/\d/,
-      handle: ({ $, url, title, parent }) => {
+      handle: function($, body) {
         let list = [];
         let next = $(".next-page>a").attr("href");
         list.push({ url: next });
@@ -57,10 +57,10 @@ const config = {
     },
     {
       test: /\/\d{4}\/\d{2}\/\d{2}\//,
-      handle: ({ url, title, $, body, parent }) => {
+      handle: function($, body) {
         let list = [];
         let fileNameRegex = /[\\\/\*\"\|\?\<\>\:]/g;
-        let savePath = parent.title.replace(fileNameRegex, "");
+        let savePath = this.title.replace(fileNameRegex, "");
         $(".article-content img").each(function(i, item) {
           let url = $(this).attr("src");
           list.push({
