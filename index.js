@@ -3,7 +3,7 @@ const request = require("request");
 const fs = require("fs");
 const path = require("path");
 const cheerio = require("cheerio");
-const config = require("./config/tuwan.js");
+const config = require("./config/twitter.js");
 
 const storeFile = path.resolve(__dirname, "./store/", `${config.name}.json`);
 // 动态加载config文件
