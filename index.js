@@ -57,7 +57,7 @@ async function walk(store) {
       console.log(`下载[${filePath}]`);
       await new Promise((resolve, reject) => {
         request
-          .get(current.url)
+          .get({url:current.url,...config.options})
           .on("end", () => {
             //删除下载标记文件
             fs.unlinkSync(loadFilePath);

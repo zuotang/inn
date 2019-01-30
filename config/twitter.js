@@ -18,7 +18,6 @@ const config = {
   entry: {
     url:
       "https://twitter.com/i/timeline?include_available_features=1&include_entities=1&reset_error_state=false",
-    index: 1,
     type: "json"
   },
   name: "twitter",
@@ -38,45 +37,42 @@ const config = {
     {
       test: /i\/timeline/,
       handle: function(json, body) {
+        let list = [];
         let $=cheerio.load(json.items_html);
+        let nextId;
         $('.js-stream-tweet').map(function(item){
           let nickName=$(this).find('.fullname').text();
           let userName=$(this).find('.username>b').text();
           let content=$(this).find('.tweet-text').text();
           let avatar=$(this).find('img.avatar').attr('src');
           let play=$(this).find('.PlayableMedia-player')
-          if(play.attr('style')){
-            console.log($(this).html())
-          }
+          let id=$(this).attr('data-tweet-id');
+          nextId=id;
+          // if(play.attr('style')){
+          //   console.log($(this).html())
+          // }
           $(this).find('.AdaptiveMediaOuterContainer img').map(function(item){
-            console.log( $(this).attr('src'))
+            let url=$(this).attr('src');
+            console.log(url)
+            let fileNameRegex = /[\\\/\*\"\|\?\<\>\:]/g;
+            let savePath = nickName.replace(fileNameRegex, "");
+            list.push({
+              type: "download",
+              url,
+              save: savePath,
+              fileName: urlToFileName(url)
+            });
           })
-         
         })
-      }
-    },
-    {
-      test: /apps\/Welfare\/detail/,
-      handle: function(json, body) {
-        let list = [];
-        json.thumb.map(item => {
-          let fileNameRegex = /[\\\/\*\"\|\?\<\>\:]/g;
-          let savePath = this.title.replace(fileNameRegex, "");
-          let url = item.replace(
-            "NTgsMTU4LDksMywxLC0xLE5PTkUsLCw5MA==",
-            "MjQyLDAsOSwzLDEsLTEsTk9ORSwsLDkw"
-          );
-          list.push({
-            type: "download",
-            url,
-            save: savePath,
-            fileName: urlToFileName(url)
-          });
-        });
-
+        list.unshift({
+          url:
+      `https://twitter.com/i/timeline?include_available_features=1&include_entities=1&max_position=${nextId}&reset_error_state=false`,
+    type: "json"
+        })
         return list;
       }
-    }
+    },
+    
   ]
 };
 
