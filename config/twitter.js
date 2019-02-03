@@ -1,6 +1,5 @@
 const path = require("path");
 const cheerio = require("cheerio");
-var tvd = require('twitter-video-downloader');
 
 const urlToExt = url => {
   //从地址获取扩展名
@@ -30,7 +29,7 @@ const config = {
     },
     proxy:{
       host:'127.0.0.1',
-      port:1080,
+      port:12333,
     }
   },
   rule: [
