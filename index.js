@@ -18,10 +18,12 @@ const storeFile = path.resolve(__dirname, "./store/", `${config.name}.json`);
 
 /*
 Store
-  Context
-    *url
-    *title
-    type download|json|string|html(default)
+  tree #状态树
+    Context #上下文
+      *url
+      *title
+      type download|json|string|html(default)
+  record #历史记录
 
 */
 
@@ -40,6 +42,10 @@ Store
 
 async function walk(store) {
   let current = store.tree.pop();
+  // 如果记录存在则跳过
+  if(store.record.includes(current.url)){
+    return next(store);
+  }
   console.log(`还有[${store.tree.length}]页`);
   //判断是否是下载内容
   if (current.type == "download") {
@@ -89,15 +95,22 @@ async function walk(store) {
       }
     }
   }
-
-  //下一步
+  // 加入历史记录
+  store.record.push(current.url);
+  saveState(store);
+  return next(store);
+  
+}
+// 下一步
+function next(store){
   if (store.tree.length !== 0) {
-    saveState(store);
     return walk(store);
   } else {
     console.log("全部下载完成");
   }
+ 
 }
+
 
 // 通过类型格式化数据
 function formatDataByType(type, body) {
