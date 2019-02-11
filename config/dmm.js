@@ -192,8 +192,8 @@ const addUser = async () => {
 
 async function downloadFile(title, url, options) {
   let savePath = title.replace(fileNameRegex, "");
-  if (savePath.length > 30) {
-    savePath = savePath.substring(0, 30);
+  if (savePath.length > 120) {
+    savePath = savePath.substring(0, 120);
   }
   return await download(
     {
