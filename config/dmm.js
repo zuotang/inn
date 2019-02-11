@@ -11,7 +11,7 @@ let options = {
   },
   proxy: {
     host: '127.0.0.1',
-    port: 1080,
+    port: 12333,
   }
 };
 
@@ -188,6 +188,7 @@ const getPhotoFromPath = (fileObj) => {
       height: size.height,
     };
   } catch (err) {
-    throw `get image size error ${err}`;
+    console.error(`get image size error ${err}`);
+	  return null;
   }
 };
